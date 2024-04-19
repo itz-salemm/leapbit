@@ -1,0 +1,9 @@
+{
+  "local_dataset_path": "",
+  "topic": "",
+  "kafka_endpoint": "",
+  "kafka_user": "",
+  "kafka_pass": "",
+  "batch_size": 1000,
+  "sleep_time": 0.01
+}
