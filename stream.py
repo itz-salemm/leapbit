@@ -18,6 +18,12 @@ def load_config(config_file):
         logger.error(f"Error loading configuration: {e}")
         sys.exit(1)
 
+def delivery_report(err, msg):
+    if err is not None:
+        logger.error(f"Message delivery failed: {err}")
+    else:
+        logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+
 def stream_to_kafka(config):
     try:
         local_dataset_path = config["local_dataset_path"]
@@ -52,6 +58,21 @@ def stream_to_kafka(config):
         # Start timer
         start = time.time()
 
+        # Send data in batches
+        for i in range(0, len(data), batch_size):
+            batch_data = data.iloc[i:i + batch_size]
+            for index, row in batch_data.iterrows():
+                message = row.to_json().encode("utf-8")
+                producer.produce(topic, message, callback=delivery_report)
+            producer.flush()  # Ensure all messages are sent
+            time.sleep(sleep_time)
+
+        # End timer
+        end = time.time()
+        elapsed = end - start
+
+        logger.info("Data sent to Kafka cluster")
+        logger.info(f"It took {round(elapsed, 2)} seconds to stream this dataset containing {len(data)} rows")
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
